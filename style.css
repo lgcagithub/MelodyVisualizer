@@ -1,0 +1,381 @@
+/* 全局样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* 主容器 */
+#app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* 画布容器 */
+#canvas-container {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 100%);
+    overflow: hidden;
+}
+
+/* 键盘容器 */
+#keyboard-container {
+    height: 120px;
+    background: rgba(20, 20, 30, 0.9);
+    border-top: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    backdrop-filter: blur(10px);
+}
+
+#keyboard {
+    display: flex;
+    gap: 2px;
+    height: 80px;
+    position: relative;
+}
+
+/* 白键 */
+.key-white {
+    width: 30px;
+    height: 80px;
+    background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
+    border: 1px solid #333;
+    border-radius: 0 0 4px 4px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    position: relative;
+}
+
+.key-white.active {
+    background: linear-gradient(to bottom, #ff6b6b, #ee5a24);
+    transform: translateY(2px);
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+}
+
+/* 黑键 */
+.key-black {
+    width: 20px;
+    height: 50px;
+    background: linear-gradient(to bottom, #222, #000);
+    border: 1px solid #000;
+    border-radius: 0 0 3px 3px;
+    position: absolute;
+    top: 0;
+    z-index: 2;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.key-black.active {
+    background: linear-gradient(to bottom, #ff4757, #c44569);
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.9);
+}
+
+/* 控制面板 */
+#control-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 320px;
+    background: rgba(20, 20, 30, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.control-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.control-section h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #61dafb;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 按钮样式 */
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 模式按钮 */
+.mode-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-color: #f5576c;
+}
+
+/* 输入框样式 */
+input[type="file"] {
+    font-size: 12px;
+    color: #e0e0e0;
+}
+
+input[type="file"]::file-selector-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #61dafb;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #4fa8c5;
+    transform: scale(1.2);
+}
+
+select {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: #61dafb;
+}
+
+/* 标签和值显示 */
+label {
+    font-size: 12px;
+    color: #b0b0b0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+label span {
+    color: #61dafb;
+    font-weight: 600;
+}
+
+/* 状态指示器 */
+.status {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.status.connected {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
+
+.status.disconnected {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+.status.loading {
+    background: rgba(241, 196, 15, 0.2);
+    color: #f1c40f;
+    border: 1px solid #f1c40f;
+}
+
+/* 状态面板 */
+.status-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.status-panel div {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.status-panel span {
+    color: #61dafb;
+    font-weight: 700;
+}
+
+/* 帮助提示 */
+#help-tip {
+    position: absolute;
+    bottom: 140px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    animation: pulse 2s infinite;
+    z-index: 50;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+/* 滚动条样式 */
+#control-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+#control-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+#control-panel::-webkit-scrollbar-thumb {
+    background: rgba(97, 218, 251, 0.5);
+    border-radius: 3px;
+}
+
+#control-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(97, 218, 251, 0.8);
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    #control-panel {
+        width: 90%;
+        right: 5%;
+        top: 10px;
+        max-height: 40vh;
+    }
+
+    #keyboard-container {
+        height: 100px;
+    }
+
+    .key-white {
+        width: 20px;
+        height: 60px;
+    }
+
+    .key-black {
+        width: 14px;
+        height: 35px;
+    }
+
+    #help-tip {
+        font-size: 12px;
+        padding: 8px 16px;
+        bottom: 120px;
+    }
+}
+
+/* 隐藏滚动条但保持功能 */
+#control-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(97, 218, 251, 0.5) rgba(255, 255, 255, 0.05);
+}
+
+/* 加载动画 */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #61dafb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
