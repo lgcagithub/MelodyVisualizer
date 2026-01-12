@@ -116,3 +116,7 @@ MelodyVisualizer/
 ## 📄 许可证
 
 MIT License - 自由使用，欢迎学习和修改。
+
+---
+
+**🤖 开发说明**：此项目由 Claude Code 辅助开发，使用原生Web技术栈构建。
