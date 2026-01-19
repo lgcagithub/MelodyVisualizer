@@ -259,12 +259,41 @@ const Fireworks = {
     geometry: null,
     material: null,
 
+    // 创建圆形粒子纹理（带辉光）
+    createParticleTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;  // 更高的分辨率
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+
+        // 多层径向渐变 - 创建辉光效果
+        const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');        // 核心：完全不透明
+        gradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)');   // 内辉光
+        gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.6)');    // 中辉光
+        gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');    // 外辉光
+        gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.05)');   // 边缘辉光
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');        // 完全透明
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 256, 256);
+
+        // 添加额外的辉光层
+        const glowGradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 80);
+        glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+        glowGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = glowGradient;
+        ctx.fillRect(0, 0, 256, 256);
+
+        return new THREE.CanvasTexture(canvas);
+    },
+
     init() {
         const container = document.getElementById('canvas-container');
 
-        // 场景
+        // 场景 - 移除雾化，让粒子更明亮
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.FogExp2(0x0a0a0a, 0.02);
 
         // 相机
         this.camera = new THREE.PerspectiveCamera(
@@ -275,20 +304,35 @@ const Fireworks = {
         );
         this.camera.position.z = 50;
 
-        // 渲染器
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        // 渲染器 - 启用抗锯齿和alpha，使用sRGB颜色空间增强亮度
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+        });
         this.renderer.setSize(container.clientWidth, container.clientHeight);
         this.renderer.setClearColor(0x000000, 0);
+        // 启用色调映射，让亮色更鲜艳 - 增强Bloom效果
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 2.5; // 增加曝光到2.5，增强泛光效果
         container.appendChild(this.renderer.domElement);
 
-        // 粒子几何体和材质
+        // 创建圆形粒子纹理
+        const particleTexture = this.createParticleTexture();
+
+        // 粒子几何体和材质 - 使用圆形纹理
         this.geometry = new THREE.BufferGeometry();
         this.material = new THREE.PointsMaterial({
-            size: 0.8,
+            size: 1.8,                    // 增大粒子尺寸
             transparent: true,
-            opacity: 0.8,
+            opacity: 1.0,                 // 最大不透明度
             vertexColors: true,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,  // 自发光混合（模拟泛光）
+            map: particleTexture,         // 圆形纹理
+            alphaMap: particleTexture,    // 使用alpha贴图
+            depthWrite: false,            // 不写入深度，避免遮挡
+            sizeAttenuation: true,        // 远小近大
+            fog: false                    // 禁用雾化，保持亮度
         });
 
         // 窗口大小调整
@@ -315,19 +359,20 @@ const Fireworks = {
 
         const color = this.getColorForNote(note);
 
-        // 创建粒子
+        // 创建粒子 - 更温和的物理效果
         for (let i = 0; i < particleCount; i++) {
             const particle = {
                 position: new THREE.Vector3(x, y, z),
                 velocity: new THREE.Vector3(
-                    (Math.random() - 0.5) * 2 * (velocity / 127),
-                    (Math.random() - 0.5) * 2 * (velocity / 127),
-                    (Math.random() - 0.5) * 2 * (velocity / 127)
+                    (Math.random() - 0.5) * 0.8 * (velocity / 127),  // 初始速度降低到0.8
+                    (Math.random() - 0.5) * 0.8 * (velocity / 127),
+                    (Math.random() - 0.5) * 0.8 * (velocity / 127)
                 ),
                 life: 1.0,
-                decay: 0.01 + Math.random() * 0.02,
+                decay: 0.003 + Math.random() * 0.005,  // 更低的衰减速度，粒子存活更久
                 color: color,
-                size: 0.5 + (velocity / 127) * 1.5
+                size: 1.2 + (velocity / 127) * 2.5,   // 增大粒子尺寸
+                trail: []  // 拖尾历史位置
             };
 
             this.particles.push(particle);
@@ -339,35 +384,45 @@ const Fireworks = {
         }
     },
 
+    // HSV转RGB - 保持饱和度同时提升亮度
+    hsvToRgb(h, s, v) {
+        const i = Math.floor(h * 6);
+        const f = h * 6 - i;
+        const p = v * (1 - s);
+        const q = v * (1 - f * s);
+        const t = v * (1 - (1 - f) * s);
+
+        switch (i % 6) {
+            case 0: return new THREE.Color(v, t, p);
+            case 1: return new THREE.Color(q, v, p);
+            case 2: return new THREE.Color(p, v, t);
+            case 3: return new THREE.Color(p, q, v);
+            case 4: return new THREE.Color(t, p, v);
+            case 5: return new THREE.Color(v, p, q);
+        }
+    },
+
     getColorForNote(note) {
         const mode = AppState.colorMode;
 
         if (mode === 'rainbow') {
-            // 根据音符在八度内的位置决定颜色
+            // 使用HSV色彩空间 - 饱和度1.0，亮度0.85，保持高饱和度
             const hue = ((note % 12) / 12) * 360;
-            return this.hslToRgb(hue / 360, 1, 0.5);
+            return this.hsvToRgb(hue / 360, 1.0, 0.85);
         } else if (mode === 'fire') {
             const t = (note % 12) / 12;
-            return new THREE.Color(
-                1.0,
-                0.3 + t * 0.7,
-                0.1 + t * 0.2
-            );
+            // 火焰模式 - 使用HSV保持饱和度
+            const hue = 0.05 + t * 0.1; // 红色到橙黄色
+            return this.hsvToRgb(hue, 1.0, 0.9);
         } else if (mode === 'ocean') {
             const t = (note % 12) / 12;
-            return new THREE.Color(
-                0.1 + t * 0.3,
-                0.3 + t * 0.5,
-                0.6 + t * 0.4
-            );
+            // 海洋模式 - 使用HSV保持饱和度
+            const hue = 0.55 + t * 0.15; // 青色到蓝色
+            return this.hsvToRgb(hue, 1.0, 0.85);
         } else if (mode === 'neon') {
-            const colors = [
-                new THREE.Color(1, 0, 1), // 品红
-                new THREE.Color(0, 1, 1), // 青色
-                new THREE.Color(1, 1, 0), // 黄色
-                new THREE.Color(0, 1, 0)  // 绿色
-            ];
-            return colors[Math.floor((note % 12) / 3)];
+            const hues = [0.83, 0.5, 0.15, 0.33]; // 品红、青、黄、绿
+            const hue = hues[Math.floor((note % 12) / 3)];
+            return this.hsvToRgb(hue, 1.0, 0.9); // 高饱和度，高亮度
         }
 
         return new THREE.Color(1, 1, 1);
@@ -407,15 +462,50 @@ const Fireworks = {
         const sizes = [];
 
         this.particles = this.particles.filter(particle => {
+            // 记录拖尾历史位置（最多5个点）
+            particle.trail.push({
+                x: particle.position.x,
+                y: particle.position.y,
+                z: particle.position.z
+            });
+            if (particle.trail.length > 5) {
+                particle.trail.shift();
+            }
+
             particle.position.add(particle.velocity);
-            particle.velocity.multiplyScalar(0.98); // 阻力
-            particle.velocity.y -= 0.02; // 重力
+            particle.velocity.multiplyScalar(0.998); // 更温和的阻力
+            particle.velocity.y -= 0.001; // 极小的重力
             particle.life -= particle.decay;
 
             if (particle.life > 0) {
+                // 添加当前粒子位置
                 positions.push(particle.position.x, particle.position.y, particle.position.z);
-                colors.push(particle.color.r * particle.life, particle.color.g * particle.life, particle.color.b * particle.life);
+
+                // 增强颜色亮度 - 使用AdditiveBlending时，颜色会叠加
+                const brightnessMultiplier = 1.5; // 增强亮度
+                colors.push(
+                    Math.min(1.0, particle.color.r * particle.life * brightnessMultiplier),
+                    Math.min(1.0, particle.color.g * particle.life * brightnessMultiplier),
+                    Math.min(1.0, particle.color.b * particle.life * brightnessMultiplier)
+                );
                 sizes.push(particle.size * particle.life);
+
+                // 添加拖尾点（透明度逐渐降低，使用独立的拖尾颜色计算）
+                for (let i = 0; i < particle.trail.length; i++) {
+                    const trailPoint = particle.trail[i];
+                    const trailProgress = i / particle.trail.length;
+
+                    positions.push(trailPoint.x, trailPoint.y, trailPoint.z);
+                    // 拖尾使用原始颜色值，避免乘以life导致黑色
+                    colors.push(
+                        particle.color.r,
+                        particle.color.g,
+                        particle.color.b
+                    );
+                    // 拖尾尺寸：从大到小，避免黑色
+                    sizes.push(particle.size * (0.3 + trailProgress * 0.5));
+                }
+
                 return true;
             }
             return false;
@@ -432,7 +522,7 @@ const Fireworks = {
             }
 
             const tempMaterial = this.material.clone();
-            tempMaterial.size = 0.8;
+            tempMaterial.size = 1.2; // 稍微增大尺寸
             this.points = new THREE.Points(this.geometry, tempMaterial);
             this.scene.add(this.points);
         }
