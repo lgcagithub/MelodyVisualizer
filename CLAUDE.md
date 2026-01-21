@@ -55,7 +55,7 @@ npx serve .  # 或使用 Python: python -m http.server 8000
 #### 3. **Fireworks** (`main.js` 行号约 172-320)
 - Three.js 3D烟花引擎
 - 基于音符生成粒子爆炸
-- 支持多种颜色模式
+- 彩虹配色（基于音符音高映射到色相）
 - 粒子物理模拟（重力、阻力）
 
 **关键方法：**
@@ -83,7 +83,7 @@ npx serve .  # 或使用 Python: python -m http.server 8000
 - MIDI设备选择和刷新
 - 音频文件上传和播放控制
 - 可视化模式切换
-- 参数调节（粒子数量、爆炸强度、颜色模式）
+- 参数调节（粒子数量、爆炸强度）
 - 状态监控（FPS、活跃音符、频谱峰值）
 
 ### 数据流
@@ -108,7 +108,6 @@ Three.js / Canvas 2D / DOM
 ```javascript
 {
     visualizationMode: 'fireworks',  // fireworks, spectrum, keyboard, combined
-    colorMode: 'rainbow',            // rainbow, fire, ocean, neon
     particleCount: 50,               // 粒子数量 (10-200)
     explosionIntensity: 1.0,         // 爆炸强度 (0.5-3.0)
 }
@@ -134,7 +133,7 @@ Three.js / Canvas 2D / DOM
 4. 在UI中添加对应的按钮
 
 ### 修改颜色方案
-编辑 `Fireworks.getColorForNote()` 方法，添加新的 `colorMode` 分支。
+编辑 `Fireworks.getColorForNote()` 方法，调整彩虹配色的色相映射逻辑。
 
 ### 调整粒子效果
 修改以下参数：

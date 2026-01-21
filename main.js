@@ -14,7 +14,6 @@ const AppState = {
     audioElement: null,
     activeNotes: new Map(), // 音符状态: noteNumber -> {velocity, timestamp}
     visualizationMode: 'fireworks', // fireworks, spectrum, keyboard, combined
-    colorMode: 'rainbow',
     particleCount: 50,
     explosionIntensity: 1.0,
     fps: 0,
@@ -403,29 +402,9 @@ const Fireworks = {
     },
 
     getColorForNote(note) {
-        const mode = AppState.colorMode;
-
-        if (mode === 'rainbow') {
-            // 使用HSV色彩空间 - 饱和度1.0，亮度0.85，保持高饱和度
-            const hue = ((note % 12) / 12) * 360;
-            return this.hsvToRgb(hue / 360, 1.0, 0.85);
-        } else if (mode === 'fire') {
-            const t = (note % 12) / 12;
-            // 火焰模式 - 使用HSV保持饱和度
-            const hue = 0.05 + t * 0.1; // 红色到橙黄色
-            return this.hsvToRgb(hue, 1.0, 0.9);
-        } else if (mode === 'ocean') {
-            const t = (note % 12) / 12;
-            // 海洋模式 - 使用HSV保持饱和度
-            const hue = 0.55 + t * 0.15; // 青色到蓝色
-            return this.hsvToRgb(hue, 1.0, 0.85);
-        } else if (mode === 'neon') {
-            const hues = [0.83, 0.5, 0.15, 0.33]; // 品红、青、黄、绿
-            const hue = hues[Math.floor((note % 12) / 3)];
-            return this.hsvToRgb(hue, 1.0, 0.9); // 高饱和度，高亮度
-        }
-
-        return new THREE.Color(1, 1, 1);
+        // 使用HSV色彩空间 - 饱和度1.0，亮度0.85，保持高饱和度
+        const hue = ((note % 12) / 12) * 360;
+        return this.hsvToRgb(hue / 360, 1.0, 0.85);
     },
 
     hslToRgb(h, s, l) {
@@ -750,10 +729,6 @@ const UIController = {
         document.getElementById('explosion-intensity').addEventListener('input', (e) => {
             AppState.explosionIntensity = parseFloat(e.target.value);
             document.getElementById('intensity-value').textContent = e.target.value;
-        });
-
-        document.getElementById('color-mode').addEventListener('change', (e) => {
-            AppState.colorMode = e.target.value;
         });
     }
 };
