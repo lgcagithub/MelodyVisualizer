@@ -3,85 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelodyVisualizer - 音乐可视化</title>
+    <title>MelodyVisualizer - Vue 3 版本</title>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <div id="app">
-        <!-- 主画布区域 -->
-        <div id="canvas-container"></div>
+    <div id="app"></div>
 
-        <!-- 键盘显示区域 -->
-        <div id="keyboard-container">
-            <div id="keyboard"></div>
-        </div>
+    <!-- Vue 3 (Global Build - UMD) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-        <!-- 控制面板 -->
-        <div id="control-panel">
-            <div class="control-section">
-                <h3>🎹 MIDI设备</h3>
-                <div class="control-group">
-                    <select id="midi-select">
-                        <option value="">选择MIDI设备...</option>
-                    </select>
-                    <button id="refresh-midi">刷新设备</button>
-                    <div id="midi-status" class="status">未连接</div>
-                </div>
-            </div>
-
-            <div class="control-section">
-                <h3>🎵 音频分析</h3>
-                <div class="control-group">
-                    <input type="file" id="audio-file" accept="audio/*">
-                    <button id="play-audio" disabled>播放</button>
-                    <button id="stop-audio" disabled>停止</button>
-                    <div id="audio-status" class="status">未加载</div>
-                </div>
-            </div>
-
-            <div class="control-section">
-                <h3>🎨 可视化模式</h3>
-                <div class="control-group">
-                    <button id="mode-fireworks" class="mode-btn active">烟花</button>
-                    <button id="mode-spectrum" class="mode-btn">频谱</button>
-                    <button id="mode-keyboard" class="mode-btn">键盘</button>
-                    <button id="mode-combined" class="mode-btn">组合</button>
-                </div>
-            </div>
-
-            <div class="control-section">
-                <h3>⚙️ 参数调节</h3>
-                <div class="control-group">
-                    <label>粒子数量: <span id="particle-value">50</span></label>
-                    <input type="range" id="particle-count" min="10" max="200" value="50">
-
-                    <label>爆炸强度: <span id="intensity-value">1.0</span></label>
-                    <input type="range" id="explosion-intensity" min="0.5" max="3" step="0.1" value="1.0">
-
-                    <label>颜色模式: 彩虹</label>
-                </div>
-            </div>
-
-            <div class="control-section">
-                <h3>📊 状态监控</h3>
-                <div class="status-panel">
-                    <div>FPS: <span id="fps-counter">0</span></div>
-                    <div>活跃音符: <span id="active-notes">0</span></div>
-                    <div>频谱峰值: <span id="spectrum-peak">0</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 帮助提示 -->
-        <div id="help-tip">
-            💡 提示: 连接电钢琴或上传音频文件开始体验
-        </div>
-    </div>
-
-    <!-- Three.js CDN -->
+    <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <!-- 主应用脚本 -->
-    <script type="module" src="./main.js"></script>
+    <script src="./src/app-umd.js"></script>
 </body>
 </html>
