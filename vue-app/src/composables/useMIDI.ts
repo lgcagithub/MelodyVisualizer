@@ -16,9 +16,12 @@ export interface MIDIDevice {
 }
 
 export function useMIDI() {
-  const isConnected = ref(false);
+  const hasAccess = ref(false);  // 已获得MIDI访问权限
+  const isConnected = ref(false);  // 已连接到特定设备
   const devices = ref<MIDIDevice[]>([]);
   const activeNotes = reactive(new Map<number, NoteData>());
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
 
   let midiAccess: MIDIAccess | null = null;
   let midiInput: MIDIInput | null = null;
@@ -43,14 +46,45 @@ export function useMIDI() {
    * 初始化 MIDI 访问
    */
   const initMIDI = async (): Promise<boolean> => {
+    isLoading.value = true;
+    error.value = null;
+
     try {
+      // 检查浏览器支持
+      if (!navigator.requestMIDIAccess) {
+        error.value = '您的浏览器不支持 Web MIDI API';
+        return false;
+      }
+
       midiAccess = await navigator.requestMIDIAccess();
+      hasAccess.value = true;  // 已获得MIDI访问权限
       updateDeviceList();
       midiAccess.onstatechange = updateDeviceList;
+
+      if (devices.value.length === 0) {
+        error.value = '未检测到 MIDI 设备，请连接设备后重试';
+      }
+
       return true;
-    } catch (error) {
-      console.error('MIDI 访问失败:', error);
+    } catch (err) {
+      console.error('MIDI 访问失败:', err);
+      hasAccess.value = false;
+
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError') {
+          error.value = 'MIDI 访问被拒绝，请允许浏览器访问 MIDI 设备';
+        } else if (err.name === 'NotSupportedError') {
+          error.value = '当前环境不支持 MIDI 访问（需要 HTTPS 或 localhost）';
+        } else {
+          error.value = `MIDI 访问失败: ${err.message}`;
+        }
+      } else {
+        error.value = 'MIDI 初始化失败，请检查浏览器权限设置';
+      }
+
       return false;
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -70,6 +104,7 @@ export function useMIDI() {
       midiInput = input;
       input.onmidimessage = handleMIDIMessage;
       isConnected.value = true;
+      error.value = null;  // 清除错误信息
     }
   };
 
@@ -116,13 +151,13 @@ export function useMIDI() {
     }
   });
 
-  // 自动初始化
-  initMIDI();
-
   return {
+    hasAccess,
     isConnected,
     devices,
     activeNotes,
+    isLoading,
+    error,
     connectDevice,
     refreshMIDI,
     noteToFrequency,

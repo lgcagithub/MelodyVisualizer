@@ -14,16 +14,21 @@
         <div class="control-group">
           <label>MIDI 设备</label>
           <div class="device-controls">
-            <select v-model="selectedDevice" @change="handleDeviceChange" :disabled="!isConnected">
-              <option value="">选择 MIDI 设备...</option>
+            <select v-model="selectedDevice" @change="handleDeviceChange" :disabled="!hasAccess || isLoading">
+              <option value="">{{ isLoading ? '正在请求权限...' : '选择 MIDI 设备...' }}</option>
               <option v-for="device in devices" :key="device.id" :value="device.id">
                 {{ device.name }}
               </option>
             </select>
-            <button class="refresh-btn" @click="refreshMIDI">刷新</button>
+            <button class="refresh-btn" @click="refreshMIDI" :disabled="isLoading">
+              {{ isLoading ? '加载中...' : '刷新' }}
+            </button>
           </div>
-          <div class="status" :class="{ connected: isConnected, disconnected: !isConnected }">
-            {{ isConnected ? '✓ 已连接' : '✗ 未连接' }}
+          <div class="status" :class="{ connected: isConnected, disconnected: !isConnected, loading: isLoading }">
+            {{ isLoading ? '⏳ 正在请求权限...' : (isConnected ? '✓ 已连接' : '✗ 未连接') }}
+          </div>
+          <div v-if="error" class="error-message">
+            ⚠️ {{ error }}
           </div>
         </div>
 
@@ -53,7 +58,7 @@ const emit = defineEmits<{
   (e: 'navigate', view: string): void;
 }>();
 
-const { isConnected, devices, activeNotes, connectDevice, refreshMIDI, noteToFrequency } = useMIDI();
+const { hasAccess, isConnected, devices, activeNotes, isLoading, error, connectDevice, refreshMIDI } = useMIDI();
 const { initThree, createExplosion, animate } = useVisualizer();
 
 const selectedDevice = ref('');
@@ -65,11 +70,7 @@ watch(
   () => activeNotes.size,
   (newSize, oldSize) => {
     if (newSize > oldSize) {
-      // 有新音符按下
-      const newNotes = Array.from(activeNotes.entries()).filter(
-        ([note]) => !Array.from(activeNotes.entries()).some(([n]) => n === note)
-      );
-      // 简化：直接使用当前所有活跃音符
+      // 有新音符按下，触发烟花效果
       activeNotes.forEach((data, note) => {
         createExplosion(note, data.velocity);
       });
@@ -134,19 +135,22 @@ const updateKeyboardHighlight = (activeNoteNumbers: number[]) => {
   });
 };
 
-onMounted(() => {
+onMounted(async () => {
   if (canvasContainer.value) {
     initThree(canvasContainer.value);
     animate();
   }
   createKeyboard();
+
+  // 自动请求MIDI权限
+  await refreshMIDI();
 });
 </script>
 
 <style scoped>
 .midi-view {
   min-height: 100vh;
-  padding-top: 80px;
+  padding-top: 60px;
 }
 
 .midi-container {
@@ -244,10 +248,28 @@ onMounted(() => {
   border: 1px solid rgba(231, 76, 60, 0.3);
 }
 
+.status.loading {
+  background: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+  border: 1px solid rgba(241, 196, 15, 0.3);
+}
+
+.error-message {
+  font-size: 12px;
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  margin-top: 8px;
+}
+
 .canvas-container {
   width: 100%;
   max-width: 1200px;
-  height: 500px;
+  min-height: 500px;
+  height: 60vh;
+  max-height: 700px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);

@@ -46,7 +46,14 @@
       </div>
 
       <!-- 频谱可视化容器 -->
-      <div class="canvas-container" ref="canvasContainer"></div>
+      <div class="canvas-container" ref="canvasContainer">
+        <!-- 空状态提示 -->
+        <div v-if="!audioLoaded" class="empty-state">
+          <div class="empty-icon">🎵</div>
+          <div class="empty-text">请上传音频文件开始分析</div>
+          <div class="empty-hint">支持 MP3, WAV 等常见音频格式</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -78,53 +85,61 @@ const handleFileChange = async (event: Event) => {
 };
 
 const drawSpectrum = () => {
-  if (!ctx.value || !canvas.value) return;
+  if (!ctx.value || !canvas.value) {
+    animationId = requestAnimationFrame(drawSpectrum);
+    return;
+  }
 
   const frequencyData = getFrequencyData();
-  if (!frequencyData) return;
 
   const width = canvas.value.width ?? 0;
   const height = canvas.value.height ?? 0;
 
-  if (!width || !height) return;
+  if (!width || !height) {
+    animationId = requestAnimationFrame(drawSpectrum);
+    return;
+  }
 
   // 清空
   ctx.value.clearRect(0, 0, width, height);
 
-  // 计算频谱峰值
-  let peak = 0;
-  for (let i = 0; i < frequencyData.length; i++) {
-    const value = frequencyData[i] ?? 0;
-    if (value > peak) peak = value;
-  }
-  spectrumPeak.value = peak;
+  // 只有在有频谱数据时才绘制
+  if (frequencyData) {
+    // 计算频谱峰值
+    let peak = 0;
+    for (let i = 0; i < frequencyData.length; i++) {
+      const value = frequencyData[i] ?? 0;
+      if (value > peak) peak = value;
+    }
+    spectrumPeak.value = peak;
 
-  // 绘制频谱
-  const barCount = 64;
-  const barWidth = width / barCount;
-  const step = Math.floor(frequencyData.length / barCount);
+    // 绘制频谱
+    const barCount = 64;
+    const barWidth = width / barCount;
+    const step = Math.floor(frequencyData.length / barCount);
 
-  for (let i = 0; i < barCount; i++) {
-    const value = frequencyData[i * step] ?? 0;
-    const percent = value / 255;
-    const barHeight = percent * height * 0.8;
+    for (let i = 0; i < barCount; i++) {
+      const value = frequencyData[i * step] ?? 0;
+      const percent = value / 255;
+      const barHeight = percent * height * 0.8;
 
-    const x = i * barWidth;
-    const y = height - barHeight;
+      const x = i * barWidth;
+      const y = height - barHeight;
 
-    // 渐变颜色
-    const gradient = ctx.value.createLinearGradient(x, y, x, height);
-    const hue = (i / barCount) * 360;
-    gradient.addColorStop(0, `hsla(${hue}, 100%, 60%, 0.9)`);
-    gradient.addColorStop(1, `hsla(${hue}, 100%, 40%, 0.3)`);
+      // 渐变颜色
+      const gradient = ctx.value.createLinearGradient(x, y, x, height);
+      const hue = (i / barCount) * 360;
+      gradient.addColorStop(0, `hsla(${hue}, 100%, 60%, 0.9)`);
+      gradient.addColorStop(1, `hsla(${hue}, 100%, 40%, 0.3)`);
 
-    ctx.value.fillStyle = gradient;
-    ctx.value.fillRect(x + 2, y, barWidth - 4, barHeight);
+      ctx.value.fillStyle = gradient;
+      ctx.value.fillRect(x + 2, y, barWidth - 4, barHeight);
 
-    // 顶部高光
-    if (barHeight > 5) {
-      ctx.value.fillStyle = `hsla(${hue}, 100%, 80%, 0.8)`;
-      ctx.value.fillRect(x + 2, y, barWidth - 4, 3);
+      // 顶部高光
+      if (barHeight > 5) {
+        ctx.value.fillStyle = `hsla(${hue}, 100%, 80%, 0.8)`;
+        ctx.value.fillRect(x + 2, y, barWidth - 4, 3);
+      }
     }
   }
 
@@ -172,7 +187,7 @@ onUnmounted(() => {
 <style scoped>
 .audio-view {
   min-height: 100vh;
-  padding-top: 80px;
+  padding-top: 60px;
 }
 
 .audio-container {
@@ -319,11 +334,38 @@ button:disabled {
 .canvas-container {
   width: 100%;
   max-width: 1200px;
-  height: 500px;
+  min-height: 500px;
+  height: 60vh;
+  max-height: 700px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.empty-hint {
+  font-size: 14px;
+  opacity: 0.6;
 }
 </style>

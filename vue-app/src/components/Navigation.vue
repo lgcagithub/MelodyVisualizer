@@ -16,8 +16,8 @@ const emit = defineEmits<{
 <style scoped>
 .navigation {
   position: fixed;
-  top: 20px;
-  left: 20px;
+  top: 16px;
+  left: 16px;
   z-index: 1000;
 }
 
