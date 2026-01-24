@@ -1,46 +1,29 @@
-# Dependencies
-node_modules/
-package-lock.json
-yarn.lock
-
-# Build output
-dist/
-build/
-*.zip
-
 # Logs
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS files
+node_modules
 .DS_Store
-Thumbs.db
-desktop.ini
+dist
+dist-ssr
+coverage
+*.local
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Temporary files
-*.tmp
-*.temp
+*.tsbuildinfo
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Cache
-.cache/
-.nyc_output/
-coverage/
-
-# Optional: If you later add a server
-server/
-*.pem
-*.crt
-*.key
+.eslintcache

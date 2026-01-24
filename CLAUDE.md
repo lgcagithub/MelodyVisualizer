@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-MelodyVisualizer 是一个基于Web技术的音乐可视化工具，支持将电钢琴MIDI输入或音频文件转换为炫酷的视觉效果。主要功能包括：
+MelodyVisualizer 是一个基于 Vue 3 + TypeScript + Vite 的音乐可视化工具，支持将电钢琴MIDI输入或音频文件转换为炫酷的视觉效果。主要功能包括：
 - **MIDI输入实时可视化**：连接电钢琴，实时显示按键并触发烟花效果
 - **音频文件分析**：上传音频文件，显示频谱和波形
 - **多种可视化模式**：烟花、频谱、键盘、组合模式
@@ -14,20 +14,7 @@ MelodyVisualizer 是一个基于Web技术的音乐可视化工具，支持将电
 
 ### 开发环境
 
-#### 原生HTML版本（index.html）
 ```bash
-# 由于使用原生Web技术 + CDN，无需安装依赖
-# 直接在浏览器中打开 index.html 即可
-
-# 如果需要本地服务器（解决CORS问题）
-npx serve .  # 或使用 Python: python -m http.server 8000
-```
-
-#### Vue版本（vue-app/）
-```bash
-# 进入vue-app目录
-cd vue-app
-
 # 安装依赖
 npm install
 
@@ -39,6 +26,9 @@ npm run build
 
 # 类型检查
 npm run type-check
+
+# 预览生产构建
+npm run preview
 ```
 
 ### 浏览器要求
@@ -48,77 +38,15 @@ npm run type-check
 
 ## 项目架构
 
-### 原生HTML版本（index.html）
-
-#### 核心模块
-
-##### 1. **MIDIModule** (`main.js` 行号约 30-90)
-- 处理Web MIDI API连接
-- 解析MIDI消息（Note On/Off）
-- 将MIDI音符转换为频率
-- 管理设备连接状态
-
-**关键方法：**
-- `init()` - 初始化MIDI访问
-- `handleMIDIMessage()` - 处理MIDI消息
-- `noteToFrequency()` - MIDI音符转频率
-
-##### 2. **AudioModule** (`main.js` 行号约 92-170)
-- Web Audio API音频分析
-- 音频文件加载和播放
-- FFT频谱分析
-- 实时获取频率和波形数据
-
-**关键方法：**
-- `loadAudioFile()` - 加载音频文件
-- `getFrequencyData()` - 获取频谱数据
-- `getWaveformData()` - 获取波形数据
-
-##### 3. **Fireworks** (`main.js` 行号约 172-320)
-- Three.js 3D烟花引擎
-- 基于音符生成粒子爆炸
-- 彩虹配色（基于音符音高映射到色相）
-- 粒子物理模拟（重力、阻力）
-
-**关键方法：**
-- `createExplosion()` - 创建爆炸效果
-- `getColorForNote()` - 音符到颜色映射
-- `update()` - 粒子更新和渲染
-
-##### 4. **SpectrumVisualizer** (`main.js` 行号约 380-440)
-- 2D频谱可视化
-- 绘制柱状频谱和波形
-- 使用Canvas 2D API
-
-**关键方法：**
-- `draw()` - 绘制频谱和波形
-- `resize()` - 响应式调整
-
-##### 5. **KeyboardDisplay** (`main.js` 行号约 340-380)
-- 显示虚拟钢琴键盘
-- 高亮当前按下的键
-- 支持C3-C5范围（48-72 MIDI音符）
-
-##### 6. **UI控制** (`main.js` 行号约 442-480)
-
-**控制面板功能：**
-- MIDI设备选择和刷新
-- 音频文件上传和播放控制
-- 可视化模式切换
-- 参数调节（粒子数量、爆炸强度）
-- 状态监控（FPS、活跃音符、频谱峰值）
-
-### Vue版本（vue-app/）
-
-#### 技术栈
+### 技术栈
 - **Vue 3.5.26** + TypeScript
 - **Vite 7.3.1** - 构建工具
 - **Three.js 0.182.0** - 3D渲染
 - **无外部CSS框架** - 纯自定义CSS
 
-#### 核心模块
+### 核心模块
 
-##### 1. **useMIDI** (`vue-app/src/composables/useMIDI.ts`)
+#### 1. **useMIDI** (`src/composables/useMIDI.ts`)
 - Web MIDI API封装
 - MIDI设备管理
 - 音符事件处理
@@ -128,7 +56,7 @@ npm run type-check
 - `connectDevice()` - 连接MIDI设备
 - `refreshMIDI()` - 刷新设备列表
 
-##### 2. **useAudio** (`vue-app/src/composables/useAudio.ts`)
+#### 2. **useAudio** (`src/composables/useAudio.ts`)
 - Web Audio API封装
 - 音频文件加载和播放
 - FFT频谱分析
@@ -138,7 +66,7 @@ npm run type-check
 - `play()` / `pause()` / `stop()` - 播放控制
 - `getFrequencyData()` - 获取频谱数据
 
-##### 3. **useVisualizer** (`vue-app/src/composables/useVisualizer.ts`)
+#### 3. **useVisualizer** (`src/composables/useVisualizer.ts`)
 - Three.js 3D烟花引擎
 - 粒子系统管理
 - **新增：ResizeObserver** - 容器大小变化监听
@@ -149,7 +77,7 @@ npm run type-check
 - `animate()` - 动画循环
 - `onResize()` - 响应式调整（防抖处理）
 
-##### 4. **useResponsive** (`vue-app/src/composables/useResponsive.ts`) **【新增】**
+#### 4. **useResponsive** (`src/composables/useResponsive.ts`) **【新增】**
 - 响应式状态管理
 - 窗口大小跟踪和断点检测
 - UI元素可见性控制
@@ -166,7 +94,7 @@ npm run type-check
 - 平板端：`768px - 1024px`
 - 桌面端：`> 1024px`
 
-##### 5. **MidiView.vue** (`vue-app/src/components/MidiView.vue`)
+#### 5. **MidiView.vue** (`src/components/MidiView.vue`)
 - MIDI可视化主界面
 - **新增：全屏布局** - 移除max-width限制，使用flex:1填充剩余空间
 - **新增：可折叠控制面板** - 移动端可隐藏/显示
@@ -191,7 +119,7 @@ npm run type-check
 └─────────────────────────────────────────┘
 ```
 
-##### 6. **AudioView.vue** (`vue-app/src/components/AudioView.vue`)
+#### 6. **AudioView.vue** (`src/components/AudioView.vue`)
 - 音频分析可视化主界面
 - **新增：全屏布局** - 移除max-width限制，使用flex:1填充剩余空间
 - **新增：可折叠控制面板** - 移动端可隐藏/显示
@@ -213,7 +141,7 @@ npm run type-check
 └─────────────────────────────────────────┘
 ```
 
-##### 7. **Navigation.vue** (`vue-app/src/components/Navigation.vue`)
+#### 7. **Navigation.vue** (`src/components/Navigation.vue`)
 - 顶部导航栏
 - **新增：移动端优化** - 更紧凑的布局，隐藏文字只显示图标
 
@@ -223,22 +151,6 @@ npm run type-check
 
 ### 数据流
 
-#### 原生HTML版本
-```
-MIDI输入/音频文件
-    ↓
-MIDIModule / AudioModule
-    ↓
-AppState.activeNotes / 频谱数据
-    ↓
-Fireworks / SpectrumVisualizer / KeyboardDisplay
-    ↓
-Three.js / Canvas 2D / DOM
-    ↓
-用户看到可视化效果
-```
-
-#### Vue版本
 ```
 MIDI输入/音频文件
     ↓
@@ -257,31 +169,7 @@ Three.js / Canvas 2D / DOM
 
 ## 关键配置参数
 
-### 原生HTML版本
-
-#### AppState 配置
-```javascript
-{
-    visualizationMode: 'fireworks',  // fireworks, spectrum, keyboard, combined
-    particleCount: 50,               // 粒子数量 (10-200)
-    explosionIntensity: 1.0,         // 爆炸强度 (0.5-3.0)
-}
-```
-
-#### Three.js 配置
-- 相机位置：z=50
-- 场景雾化：FogExp2(0x0a0a0a, 0.02)
-- 粒子大小：0.8-2.3 (基于音符力度)
-- 粒子总数限制：5000
-
-#### 音频分析配置
-- FFT大小：2048
-- 平滑系数：0.8
-- 频谱条数量：64
-
-### Vue版本
-
-#### useVisualizer 配置
+### useVisualizer 配置
 ```typescript
 // Three.js 场景配置
 {
@@ -309,7 +197,7 @@ Three.js / Canvas 2D / DOM
 }
 ```
 
-#### useResponsive 配置
+### useResponsive 配置
 ```typescript
 // 断点定义
 {
@@ -327,7 +215,7 @@ Three.js / Canvas 2D / DOM
 // Mobile:   calc(100vh - 100px)  // Audio
 ```
 
-#### 音频分析配置
+### 音频分析配置
 - FFT大小：2048
 - 平滑系数：0.8
 - 频谱条数量：64
@@ -335,37 +223,15 @@ Three.js / Canvas 2D / DOM
 
 ## 开发指南
 
-### 原生HTML版本
-
-#### 添加新的可视化模式
-1. 在 `AppState.visualizationMode` 添加新选项
-2. 在 `updateVisualizationMode()` 中处理显示逻辑
-3. 在 `animate()` 主循环中添加渲染逻辑
-4. 在UI中添加对应的按钮
-
-#### 修改颜色方案
-编辑 `Fireworks.getColorForNote()` 方法，调整彩虹配色的色相映射逻辑。
-
-#### 调整粒子效果
-修改以下参数：
-- `AppState.particleCount` - 粒子数量
-- `AppState.explosionIntensity` - 爆炸强度
-- `Fireworks.createExplosion()` 中的物理参数
-
-#### 处理新的MIDI事件
-在 `MIDIModule.handleMIDIMessage()` 中扩展对CC消息、程序变化等MIDI事件的处理。
-
-### Vue版本
-
-#### 添加新的可视化模式
+### 添加新的可视化模式
 1. 在对应的View组件（MidiView/AudioView）中添加新的可视化模式
 2. 在模板中添加对应的渲染逻辑
 3. 在样式中添加对应的CSS类
 
-#### 修改颜色方案
+### 修改颜色方案
 编辑 `useVisualizer.ts` 中的 `getColorForNote()` 方法，调整彩虹配色的色相映射逻辑。
 
-#### 调整粒子效果
+### 调整粒子效果
 修改 `useVisualizer.ts` 中的配置：
 ```typescript
 // 粒子数量限制
@@ -377,10 +243,10 @@ const GRAVITY = 0.001;
 const RESISTANCE = 0.998;
 ```
 
-#### 处理新的MIDI事件
+### 处理新的MIDI事件
 在 `useMIDI.ts` 中扩展对CC消息、程序变化等MIDI事件的处理。
 
-#### 添加响应式断点
+### 添加响应式断点
 在 `useResponsive.ts` 中添加新的断点：
 ```typescript
 const updateBreakpoints = () => {
@@ -391,7 +257,7 @@ const updateBreakpoints = () => {
 };
 ```
 
-#### 调整全屏布局
+### 调整全屏布局
 在组件的CSS中调整高度计算：
 ```css
 .canvas-container {
@@ -399,7 +265,7 @@ const updateBreakpoints = () => {
 }
 ```
 
-#### 自定义控制面板
+### 自定义控制面板
 在组件中添加可折叠控制面板：
 ```vue
 <div class="control-panel" :class="{ collapsed: !responsiveState.controlsVisible }">
@@ -407,7 +273,7 @@ const updateBreakpoints = () => {
 </div>
 ```
 
-#### 添加移动端切换按钮
+### 添加移动端切换按钮
 在模板中添加浮动按钮：
 ```vue
 <div v-if="responsiveState.isMobile" class="mobile-controls">
@@ -419,29 +285,7 @@ const updateBreakpoints = () => {
 
 ## 调试技巧
 
-### 原生HTML版本
-
-#### 浏览器控制台
-```javascript
-// 访问全局对象
-window.MelodyVisualizer
-
-// 查看当前状态
-console.log(MelodyVisualizer.AppState)
-
-// 手动触发烟花
-MelodyVisualizer.Fireworks.createExplosion(60, 100)
-```
-
-#### 常见问题
-1. **MIDI设备不显示**：检查是否使用HTTPS，刷新页面
-2. **音频无法播放**：需要用户点击页面初始化AudioContext
-3. **Three.js报错**：检查浏览器WebGL支持
-4. **性能问题**：减少粒子数量，降低爆炸强度
-
-### Vue版本
-
-#### 开发服务器调试
+### 开发服务器调试
 ```bash
 # 启动开发服务器
 npm run dev
@@ -453,7 +297,7 @@ npm run build
 npm run type-check
 ```
 
-#### 浏览器控制台
+### 浏览器控制台
 ```javascript
 // 访问Vue应用实例（如果在main.ts中暴露）
 window.VueApp
@@ -465,13 +309,13 @@ console.log(app.config.globalProperties.$responsive)
 // 需要通过Vue DevTools或组件实例访问
 ```
 
-#### Vue DevTools
+### Vue DevTools
 1. 安装Vue DevTools浏览器扩展
 2. 打开开发者工具 → Vue标签
 3. 查看组件树和响应式状态
 4. 检查props和emit事件
 
-#### 常见问题
+### 常见问题
 1. **MIDI设备不显示**：检查是否使用HTTPS，刷新页面
 2. **音频无法播放**：需要用户点击页面初始化AudioContext
 3. **Three.js报错**：检查浏览器WebGL支持
@@ -479,7 +323,7 @@ console.log(app.config.globalProperties.$responsive)
 5. **布局问题**：检查CSS flex布局和高度计算
 6. **移动端显示异常**：检查断点检测和媒体查询
 
-#### 性能优化
+### 性能优化
 - 使用ResizeObserver代替window.resize事件
 - 防抖处理resize事件（150ms延迟）
 - 移动端默认隐藏控制面板
@@ -488,24 +332,13 @@ console.log(app.config.globalProperties.$responsive)
 
 ## 部署到GitHub Pages
 
-由于当前使用CDN依赖，可以直接部署：
-
 ```bash
-# 1. 初始化git仓库（如果还没有）
-git init
-git add .
-git commit -m "Initial commit"
+# 1. 构建生产版本
+npm run build
 
-# 2. 创建gh-pages分支
-git checkout --orphan gh-pages
-git add .
-git commit -m "Deploy to GitHub Pages"
-
-# 3. 推送到GitHub
-git remote add origin <your-repo-url>
-git push -u origin gh-pages
-
-# 4. 在GitHub仓库设置中启用Pages
+# 2. 将 dist/ 目录部署到 GitHub Pages
+# 或使用 gh-pages 工具
+npx gh-pages -d dist
 ```
 
 ## 扩展建议
@@ -514,30 +347,24 @@ git push -u origin gh-pages
 - 添加录音功能（使用MediaRecorder API）
 - 支持拖拽音频文件
 - 添加预设可视化配置
-- **Vue版本**：添加更多响应式断点支持
+- 添加更多响应式断点支持
 
 ### 中期扩展
 - MIDI文件上传和播放
 - 实时音频输入（麦克风）
 - 导出可视化视频
-- **Vue版本**：添加Vue Router多页面支持
-- **Vue版本**：添加状态管理（Pinia/Vuex）
+- 添加Vue Router多页面支持
+- 添加状态管理（Pinia/Vuex）
 
 ### 长期扩展
 - Web Audio API合成器
 - 多人协作模式
 - 移动端适配和触摸支持
-- **Vue版本**：添加PWA支持
-- **Vue版本**：添加离线缓存
+- 添加PWA支持
+- 添加离线缓存
 
 ## 依赖说明
 
-### 原生HTML版本
-- **Three.js r128**：通过CDN加载，用于3D烟花效果
-- **原生Web API**：Web MIDI API, Web Audio API, Canvas API
-- **无构建工具**：纯原生开发，便于理解和修改
-
-### Vue版本
 - **Vue 3.5.26**：前端框架
 - **TypeScript**：类型系统
 - **Vite 7.3.1**：构建工具

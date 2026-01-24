@@ -1,122 +1,113 @@
-# MelodyVisualizer 🎹🎵
+# MelodyVisualizer - Vue 3 + Vite 版本
 
-将电钢琴MIDI输入或音频文件转换为绚烂的可视化效果！
+基于 Vue 3 + TypeScript + Vite 重构的音乐可视化应用。
 
-## ✨ 功能特性
+## 功能特性
 
-- **🎹 MIDI实时连接**：支持Web MIDI API，连接电钢琴实时可视化
-- **🎵 音频文件分析**：上传MP3/WAV，显示频谱和波形
-- **🎆 3D烟花效果**：基于Three.js的粒子爆炸系统
-- **📊 频谱可视化**：实时FFT频谱和波形显示
-- **⌨️ 虚拟键盘**：显示当前按下的琴键
-- **🎨 多种模式**：烟花、频谱、键盘、组合模式
-- **🌈 彩虹配色**：基于音符生成绚丽的彩虹色粒子效果
+- 🎹 **MIDI 实时可视化**：连接电钢琴，实时显示按键并触发烟花效果
+- 🎵 **音频文件分析**：上传音频文件，显示频谱和波形
+- 🎆 **3D 烟花效果**：基于 Three.js 的粒子爆炸效果
+- 🌈 **彩虹配色**：根据音符音高映射到不同颜色
+- 🎨 **现代化 UI**：Vue 3 组件化架构
 
-## 🚀 快速开始
+## 快速开始
 
-### 浏览器要求
-- **必须使用HTTPS**（Web MIDI API要求）
-- Chrome/Edge 60+，Firefox 55+，Safari 11+
+### 安装依赖
 
-### 使用方法
-1. 下载所有文件到本地
-2. 使用HTTPS服务器运行（或直接在支持HTTPS的在线环境打开）
-3. 连接电钢琴或上传音频文件开始体验
-
-### 本地开发
-```bash
-# 使用Python简单服务器（需要HTTPS包装）
-python -m http.server 8000
-
-# 或使用Node.js服务器
-npx serve .
-
-# 然后在浏览器访问 https://localhost:8000
+```sh
+npm install
 ```
 
-## 🎮 操作指南
+### 开发模式（热重载）
 
-### MIDI模式
-1. 连接电钢琴到电脑
-2. 点击"刷新设备"
-3. 选择你的MIDI设备
-4. 弹奏钢琴，观看烟花绽放！
+```sh
+npm run dev
+```
 
-### 音频模式
-1. 点击"选择音频文件"
-2. 上传MP3/WAV文件
-3. 点击"播放"
-4. 观看频谱跳动！
+访问 http://localhost:5173
 
-### 可视化模式切换
-- **烟花**：3D粒子爆炸效果
-- **频谱**：音频频谱和波形
-- **键盘**：仅显示虚拟键盘
-- **组合**：所有效果同时显示
+### 生产构建
 
-### 参数调节
-- **粒子数量**：10-200，控制烟花密度
-- **爆炸强度**：0.5-3.0，控制爆炸大小
-- **颜色模式**：彩虹（固定）
+```sh
+npm run build
+```
 
-## 🏗️ 项目结构
+构建产物在 `dist/` 目录
+
+### 预览生产构建
+
+```sh
+npm run preview
+```
+
+## 项目结构
 
 ```
 MelodyVisualizer/
-├── index.html          # 主页面
-├── style.css           # 样式文件
-├── main.js            # 核心逻辑
-├── CLAUDE.md          # 开发文档
-├── README.md          # 本文件
-└── .gitignore         # Git忽略文件
+├── src/
+│   ├── components/          # Vue 组件
+│   │   ├── AppHome.vue      # 主菜单
+│   │   ├── MidiView.vue     # MIDI 模式视图
+│   │   ├── AudioView.vue    # 音频分析视图
+│   │   └── Navigation.vue   # 导航栏
+│   ├── composables/         # 组合式函数
+│   │   ├── useMIDI.ts       # MIDI 处理逻辑
+│   │   ├── useAudio.ts      # 音频分析逻辑
+│   │   ├── useVisualizer.ts # Three.js 可视化
+│   │   └── useResponsive.ts # 响应式状态管理
+│   ├── assets/              # 样式文件
+│   │   ├── base.css         # 基础样式
+│   │   ├── main.css         # 全局样式
+│   │   └── logo.svg         # Logo
+│   ├── App.vue              # 根组件
+│   └── main.ts              # 入口文件
+├── dist/                    # 构建产物
+├── package.json             # 依赖配置
+├── vite.config.ts           # Vite 配置
+├── tsconfig.json            # TypeScript 配置
+├── index.html               # 入口 HTML
+└── 其他配置文件
 ```
 
-### 核心模块
-- **MIDIModule**: MIDI设备连接和消息处理
-- **AudioModule**: 音频文件加载和分析
-- **Fireworks**: Three.js 3D烟花引擎
-- **SpectrumVisualizer**: 2D频谱可视化
-- **KeyboardDisplay**: 虚拟钢琴键盘
+## 技术栈
 
-## 🔧 技术栈
+- **Vue 3** - 渐进式 JavaScript 框架
+- **TypeScript** - 类型安全的 JavaScript 超集
+- **Vite** - 下一代前端构建工具
+- **Three.js** - 3D 图形库
+- **Web MIDI API** - MIDI 设备连接
+- **Web Audio API** - 音频分析
 
-- **Web MIDI API**: 电钢琴输入处理
-- **Web Audio API**: 音频分析和频谱提取
-- **Three.js**: 3D粒子系统和渲染
-- **Canvas 2D**: 频谱和波形绘制
-- **原生JavaScript**: 无构建工具，纯原生开发
+## 浏览器要求
 
-## 📸 效果预览
+- **必须使用 HTTPS**（Web MIDI API 要求）
+- 支持 Web MIDI API 和 Web Audio API 的现代浏览器
+- Chrome/Edge 60+，Firefox 55+，Safari 11+
 
-- **烟花模式**：根据音符频率和力度生成彩色粒子爆炸
-- **频谱模式**：实时显示音频频率分布和波形
-- **键盘模式**：高亮显示当前按下的琴键
-- **组合模式**：所有效果叠加，最炫酷的体验
+## 开发说明
 
-## 🎯 未来计划
+### 使用 VSCode
 
-- [ ] 录音功能（麦克风输入）
-- [ ] MIDI文件播放
-- [ ] 移动端适配
-- [ ] 视频导出功能
-- [ ] 多人协作模式
-- [ ] 自定义着色器效果
+推荐安装以下扩展：
+- [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) - Vue 3 官方扩展
 
-## 📝 注意事项
+### TypeScript 类型检查
 
-1. **HTTPS要求**：Web MIDI API只能在HTTPS或localhost下工作
-2. **浏览器兼容性**：推荐使用最新版Chrome或Edge
-3. **性能优化**：如果卡顿，可减少粒子数量或降低爆炸强度
-4. **设备支持**：确保电钢琴已正确连接并被浏览器识别
+```sh
+npm run type-check
+```
 
-## 🤝 贡献
+## 部署到 GitHub Pages
 
-欢迎提出建议和改进！这是一个个人项目，但希望它能帮助更多人享受音乐可视化的乐趣。
+```bash
+# 1. 构建生产版本
+npm run build
 
-## 📄 许可证
+# 2. 将 dist/ 目录部署到 GitHub Pages
+# 或使用 gh-pages 工具
+npx gh-pages -d dist
+```
 
-MIT License - 自由使用，欢迎学习和修改。
+## 许可证
 
----
-
-**🤖 开发说明**：此项目由 Claude Code 辅助开发，使用原生Web技术栈构建。
+MIT
