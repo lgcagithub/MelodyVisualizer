@@ -27,3 +27,8 @@ coverage
 *.tsbuildinfo
 
 .eslintcache
+
+# Certificate files
+*.pem
+*.crt
+*.key
