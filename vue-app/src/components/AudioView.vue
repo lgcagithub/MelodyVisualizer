@@ -10,7 +10,7 @@
       </div>
 
       <!-- 音频控制面板 -->
-      <div class="control-panel">
+      <div class="control-panel" :class="{ collapsed: !responsiveState.controlsVisible }">
         <div class="control-group">
           <label>音频文件</label>
           <div class="file-controls">
@@ -55,12 +55,20 @@
         </div>
       </div>
     </div>
+
+    <!-- 移动端切换按钮 -->
+    <div v-if="responsiveState.isMobile" class="mobile-controls">
+      <button class="toggle-btn" @click="toggleControls" :aria-label="responsiveState.controlsVisible ? '隐藏控制面板' : '显示控制面板'" :aria-expanded="responsiveState.controlsVisible">
+        {{ responsiveState.controlsVisible ? '✕' : '⚙️' }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useAudio } from '../composables/useAudio';
+import { useResponsive } from '../composables/useResponsive';
 import Navigation from './Navigation.vue';
 
 const emit = defineEmits<{
@@ -68,6 +76,7 @@ const emit = defineEmits<{
 }>();
 
 const { isPlaying, audioLoaded, fileName, loadAudioFile, play, pause, stop, getFrequencyData } = useAudio();
+const { state: responsiveState, toggleControls, hideControls } = useResponsive();
 
 const fileInput = ref<HTMLInputElement>();
 const canvasContainer = ref<HTMLElement>();
@@ -174,6 +183,11 @@ const initCanvas = () => {
 onMounted(() => {
   initCanvas();
   drawSpectrum();
+
+  // 移动端默认隐藏控制面板
+  if (responsiveState.value.isMobile) {
+    hideControls();
+  }
 });
 
 onUnmounted(() => {
@@ -188,6 +202,8 @@ onUnmounted(() => {
 .audio-view {
   min-height: 100vh;
   padding-top: 60px;
+  display: flex;
+  flex-direction: column;
 }
 
 .audio-container {
@@ -196,6 +212,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 24px;
   padding: 20px;
+  flex: 1;
+  width: 100%;
 }
 
 .header {
@@ -221,6 +239,15 @@ onUnmounted(() => {
   padding: 20px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+.control-panel.collapsed {
+  max-height: 0;
+  padding: 0;
+  opacity: 0;
+  border: none;
 }
 
 .control-group {
@@ -332,11 +359,10 @@ button:disabled {
 }
 
 .canvas-container {
+  flex: 1;
   width: 100%;
-  max-width: 1200px;
-  min-height: 500px;
-  height: 60vh;
-  max-height: 700px;
+  min-height: 300px;
+  height: calc(100vh - 140px);
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -367,5 +393,86 @@ button:disabled {
 .empty-hint {
   font-size: 14px;
   opacity: 0.6;
+}
+
+/* 移动端切换按钮 */
+.mobile-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.toggle-btn {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  background: rgba(102, 126, 234, 0.8);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: rgba(102, 126, 234, 1);
+  transform: scale(1.1);
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  .audio-view {
+    padding-top: 50px;
+  }
+
+  .audio-container {
+    padding: 10px;
+    gap: 16px;
+  }
+
+  .header h2 {
+    font-size: 24px;
+  }
+
+  .header p {
+    font-size: 14px;
+  }
+
+  .control-panel {
+    max-height: 500px;
+  }
+
+  .canvas-container {
+    height: calc(100vh - 100px);
+  }
+
+  .mobile-controls {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  .toggle-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .canvas-container {
+    height: calc(100vh - 160px);
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-controls {
+    display: none;
+  }
 }
 </style>

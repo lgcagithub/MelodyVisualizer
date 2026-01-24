@@ -45,4 +45,26 @@ const emit = defineEmits<{
 .icon {
   font-size: 16px;
 }
+
+/* 移动端导航 */
+@media (max-width: 768px) {
+  .navigation {
+    top: 8px;
+    left: 8px;
+  }
+
+  .back-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .text {
+    display: none;
+  }
+
+  .icon {
+    font-size: 14px;
+  }
+}
 </style>

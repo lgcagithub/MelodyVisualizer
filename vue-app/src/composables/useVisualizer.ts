@@ -3,7 +3,7 @@
  * 基于 Three.js 的 3D 烟花效果
  */
 
-import { onUnmounted } from 'vue';
+import { onUnmounted, ref } from 'vue';
 import * as THREE from 'three';
 
 interface Particle {
@@ -25,6 +25,8 @@ export function useVisualizer() {
   let material: THREE.PointsMaterial | null = null;
   let points: THREE.Points | null = null;
   let animationId: number | null = null;
+  let resizeObserver: ResizeObserver | null = null;
+  let resizeTimeout: number | null = null;
 
   /**
    * 创建粒子纹理（带辉光效果）
@@ -115,6 +117,9 @@ export function useVisualizer() {
     renderer.toneMappingExposure = 2.5;
 
     container.appendChild(renderer.domElement);
+
+    // 设置 ResizeObserver 监听容器大小变化
+    setupResizeObserver(container);
 
     // 创建粒子纹理
     const particleTexture = createParticleTexture();
@@ -270,9 +275,36 @@ export function useVisualizer() {
     const container = renderer.domElement.parentElement;
     if (!container) return;
 
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    // 防抖处理，避免频繁调整
+    if (resizeTimeout) {
+      cancelAnimationFrame(resizeTimeout);
+    }
+
+    resizeTimeout = requestAnimationFrame(() => {
+      camera!.aspect = container.clientWidth / container.clientHeight;
+      camera!.updateProjectionMatrix();
+      renderer!.setSize(container.clientWidth, container.clientHeight);
+      resizeTimeout = null;
+    });
+  };
+
+  /**
+   * 设置 ResizeObserver 监听容器大小变化
+   */
+  const setupResizeObserver = (container: HTMLElement) => {
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+    }
+
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === container) {
+          onResize();
+        }
+      }
+    });
+
+    resizeObserver.observe(container);
   };
 
   /**
@@ -282,7 +314,13 @@ export function useVisualizer() {
     if (animationId) {
       cancelAnimationFrame(animationId);
     }
+    if (resizeTimeout) {
+      cancelAnimationFrame(resizeTimeout);
+    }
     window.removeEventListener('resize', onResize);
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+    }
     if (renderer) {
       renderer.dispose();
     }

@@ -10,7 +10,7 @@
       </div>
 
       <!-- MIDI 控制面板 -->
-      <div class="control-panel">
+      <div class="control-panel" :class="{ collapsed: !responsiveState.controlsVisible }">
         <div class="control-group">
           <label>MIDI 设备</label>
           <div class="device-controls">
@@ -40,10 +40,25 @@
       <!-- 3D 可视化容器 -->
       <div class="canvas-container" ref="canvasContainer"></div>
 
-      <!-- 键盘显示 -->
-      <div class="keyboard-container">
+      <!-- 键盘显示（桌面端） -->
+      <div class="keyboard-container" v-if="responsiveState.isDesktop">
         <div class="keyboard" ref="keyboardRef"></div>
       </div>
+    </div>
+
+    <!-- 移动端切换按钮 -->
+    <div v-if="responsiveState.isMobile" class="mobile-controls">
+      <button class="toggle-btn" @click="toggleControls" :aria-label="responsiveState.controlsVisible ? '隐藏控制面板' : '显示控制面板'" :aria-expanded="responsiveState.controlsVisible">
+        {{ responsiveState.controlsVisible ? '✕' : '⚙️' }}
+      </button>
+      <button class="toggle-btn keyboard-toggle" @click="toggleKeyboard" :aria-label="responsiveState.keyboardVisible ? '隐藏键盘' : '显示键盘'" :aria-expanded="responsiveState.keyboardVisible">
+        {{ responsiveState.keyboardVisible ? '✕' : '🎹' }}
+      </button>
+    </div>
+
+    <!-- 移动端键盘覆盖层 -->
+    <div v-if="responsiveState.isMobile" class="keyboard-overlay" :class="{ visible: responsiveState.keyboardVisible }">
+      <div class="keyboard" ref="keyboardRef"></div>
     </div>
   </div>
 </template>
@@ -52,6 +67,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useMIDI } from '../composables/useMIDI';
 import { useVisualizer } from '../composables/useVisualizer';
+import { useResponsive } from '../composables/useResponsive';
 import Navigation from './Navigation.vue';
 
 const emit = defineEmits<{
@@ -60,6 +76,7 @@ const emit = defineEmits<{
 
 const { hasAccess, isConnected, devices, activeNotes, isLoading, error, connectDevice, refreshMIDI } = useMIDI();
 const { initThree, createExplosion, animate } = useVisualizer();
+const { state: responsiveState, toggleControls, toggleKeyboard, showControls, hideControls } = useResponsive();
 
 const selectedDevice = ref('');
 const canvasContainer = ref<HTMLElement>();
@@ -144,6 +161,11 @@ onMounted(async () => {
 
   // 自动请求MIDI权限
   await refreshMIDI();
+
+  // 移动端默认隐藏控制面板
+  if (responsiveState.value.isMobile) {
+    hideControls();
+  }
 });
 </script>
 
@@ -151,6 +173,8 @@ onMounted(async () => {
 .midi-view {
   min-height: 100vh;
   padding-top: 60px;
+  display: flex;
+  flex-direction: column;
 }
 
 .midi-container {
@@ -159,6 +183,8 @@ onMounted(async () => {
   align-items: center;
   gap: 24px;
   padding: 20px;
+  flex: 1;
+  width: 100%;
 }
 
 .header {
@@ -184,6 +210,15 @@ onMounted(async () => {
   padding: 20px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+.control-panel.collapsed {
+  max-height: 0;
+  padding: 0;
+  opacity: 0;
+  border: none;
 }
 
 .control-group {
@@ -265,11 +300,10 @@ onMounted(async () => {
 }
 
 .canvas-container {
+  flex: 1;
   width: 100%;
-  max-width: 1200px;
-  min-height: 500px;
-  height: 60vh;
-  max-height: 700px;
+  min-height: 300px;
+  height: calc(100vh - 180px);
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -279,9 +313,9 @@ onMounted(async () => {
 
 .keyboard-container {
   width: 100%;
-  max-width: 1200px;
   display: flex;
   justify-content: center;
+  padding: 10px 0;
 }
 
 .keyboard {
@@ -289,6 +323,7 @@ onMounted(async () => {
   height: 120px;
   display: flex;
   gap: 2px;
+  min-width: 600px;
 }
 
 .key-white {
@@ -321,5 +356,136 @@ onMounted(async () => {
 .key-black.active {
   background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
   box-shadow: 0 0 20px rgba(118, 75, 162, 0.8);
+}
+
+/* 移动端切换按钮 */
+.mobile-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.toggle-btn {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  background: rgba(102, 126, 234, 0.8);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: rgba(102, 126, 234, 1);
+  transform: scale(1.1);
+}
+
+.keyboard-toggle {
+  background: rgba(231, 76, 60, 0.8);
+}
+
+.keyboard-toggle:hover {
+  background: rgba(231, 76, 60, 1);
+}
+
+/* 移动端键盘覆盖层 */
+.keyboard-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 999;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 180px;
+}
+
+.keyboard-overlay.visible {
+  transform: translateY(0);
+}
+
+.keyboard-overlay .keyboard {
+  min-width: 500px;
+  transform: scale(0.9);
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  .midi-view {
+    padding-top: 50px;
+  }
+
+  .midi-container {
+    padding: 10px;
+    gap: 16px;
+  }
+
+  .header h2 {
+    font-size: 24px;
+  }
+
+  .header p {
+    font-size: 14px;
+  }
+
+  .control-panel {
+    max-height: 500px;
+  }
+
+  .canvas-container {
+    height: calc(100vh - 120px);
+  }
+
+  .keyboard-container {
+    display: none;
+  }
+
+  .mobile-controls {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  .toggle-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .canvas-container {
+    height: calc(100vh - 200px);
+  }
+
+  .keyboard-container {
+    padding: 15px 0;
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-controls {
+    display: none;
+  }
+
+  .keyboard-overlay {
+    display: none;
+  }
 }
 </style>
