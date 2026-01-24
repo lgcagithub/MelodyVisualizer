@@ -18,7 +18,7 @@ const emit = defineEmits<{
   position: fixed;
   top: 16px;
   left: 16px;
-  z-index: 1000;
+  z-index: 1001; /* 高于侧边栏 (999) */
 }
 
 .back-btn {

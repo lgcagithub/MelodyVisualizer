@@ -2,15 +2,22 @@
   <div class="audio-view">
     <Navigation @go-back="emit('navigate', 'home')" />
 
-    <div class="audio-container">
-      <!-- 标题 -->
-      <div class="header">
-        <h2>🎵 音频分析</h2>
-        <p>上传音频文件，查看实时频谱和波形</p>
+    <!-- 全屏 Canvas 容器 -->
+    <div class="canvas-container" ref="canvasContainer">
+      <!-- 空状态提示 -->
+      <div v-if="!audioLoaded" class="empty-state">
+        <div class="empty-icon">🎵</div>
+        <div class="empty-text">请上传音频文件开始分析</div>
+        <div class="empty-hint">支持 MP3, WAV 等常见音频格式</div>
       </div>
+    </div>
 
-      <!-- 音频控制面板 -->
-      <div class="control-panel" :class="{ collapsed: !responsiveState.controlsVisible }">
+    <!-- 悬浮侧边栏（桌面端/平板端） -->
+    <div v-if="!responsiveState.isMobile"
+         class="sidebar"
+         :class="{ collapsed: responsiveState.isSidebarCollapsed }">
+      <!-- 控制面板内容 -->
+      <div class="sidebar-content">
         <div class="control-group">
           <label>音频文件</label>
           <div class="file-controls">
@@ -45,18 +52,51 @@
         </div>
       </div>
 
-      <!-- 频谱可视化容器 -->
-      <div class="canvas-container" ref="canvasContainer">
-        <!-- 空状态提示 -->
-        <div v-if="!audioLoaded" class="empty-state">
-          <div class="empty-icon">🎵</div>
-          <div class="empty-text">请上传音频文件开始分析</div>
-          <div class="empty-hint">支持 MP3, WAV 等常见音频格式</div>
+      <!-- 折叠按钮 -->
+      <button class="collapse-btn" @click="toggleSidebar" :aria-label="responsiveState.isSidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'">
+        {{ responsiveState.isSidebarCollapsed ? '☰' : '✕' }}
+      </button>
+    </div>
+
+    <!-- 移动端底部面板 -->
+    <div v-if="responsiveState.isMobile"
+         class="mobile-panel"
+         :class="{ collapsed: !responsiveState.controlsVisible }">
+      <div class="control-group">
+        <label>音频文件</label>
+        <div class="file-controls">
+          <input
+            type="file"
+            accept="audio/*"
+            @change="handleFileChange"
+            ref="fileInput"
+            style="display: none"
+          />
+          <button class="upload-btn" @click="fileInput?.click()">
+            <span>📁</span>
+            <span>{{ fileName || '选择文件' }}</span>
+          </button>
         </div>
+        <div class="status" :class="{ connected: audioLoaded, disconnected: !audioLoaded }">
+          {{ audioLoaded ? '✓ 已加载' : '✗ 未加载' }}
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>播放控制</label>
+        <div class="play-controls">
+          <button class="play-btn" @click="play" :disabled="!audioLoaded || isPlaying">播放</button>
+          <button class="pause-btn" @click="pause" :disabled="!audioLoaded || !isPlaying">暂停</button>
+          <button class="stop-btn" @click="stop" :disabled="!audioLoaded">停止</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>频谱峰值: {{ spectrumPeak }}</label>
       </div>
     </div>
 
-    <!-- 移动端切换按钮 -->
+    <!-- 移动端浮动按钮 -->
     <div v-if="responsiveState.isMobile" class="mobile-controls">
       <button class="toggle-btn" @click="toggleControls" :aria-label="responsiveState.controlsVisible ? '隐藏控制面板' : '显示控制面板'" :aria-expanded="responsiveState.controlsVisible">
         {{ responsiveState.controlsVisible ? '✕' : '⚙️' }}
@@ -76,7 +116,7 @@ const emit = defineEmits<{
 }>();
 
 const { isPlaying, audioLoaded, fileName, loadAudioFile, play, pause, stop, getFrequencyData } = useAudio();
-const { state: responsiveState, toggleControls, hideControls } = useResponsive();
+const { state: responsiveState, toggleControls, hideControls, toggleSidebar, showSidebar, getCanvasWidth, getCanvasHeight } = useResponsive();
 
 const fileInput = ref<HTMLInputElement>();
 const canvasContainer = ref<HTMLElement>();
@@ -188,6 +228,11 @@ onMounted(() => {
   if (responsiveState.value.isMobile) {
     hideControls();
   }
+
+  // 桌面端默认显示侧边栏
+  if (responsiveState.value.isDesktop || responsiveState.value.isTablet) {
+    showSidebar();
+  }
 });
 
 onUnmounted(() => {
@@ -200,56 +245,163 @@ onUnmounted(() => {
 
 <style scoped>
 .audio-view {
-  min-height: 100vh;
-  padding-top: 60px;
-  display: flex;
-  flex-direction: column;
-}
-
-.audio-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  padding: 20px;
-  flex: 1;
-  width: 100%;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.header h2 {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-
-.header p {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.control-panel {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
 }
 
-.control-panel.collapsed {
-  max-height: 0;
-  padding: 0;
-  opacity: 0;
-  border: none;
+.canvas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: v-bind(getCanvasWidth);
+  height: v-bind(getCanvasHeight);
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.3);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* 桌面端侧边栏 */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100vh;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.collapsed {
+  transform: translateX(100%);
+}
+
+.sidebar-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.collapse-btn {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 60px;
+  background: rgba(102, 126, 234, 0.8);
+  border: none;
+  border-radius: 8px 0 0 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.collapse-btn:hover {
+  background: rgba(102, 126, 234, 1);
+  width: 45px;
+}
+
+/* 平板端侧边栏 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    width: 250px;
+  }
+
+  .canvas-container {
+    width: calc(100vw - 250px);
+  }
+
+  .sidebar.collapsed ~ .canvas-container {
+    width: 100vw;
+  }
+}
+
+/* 移动端底部面板 */
+.mobile-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80%;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.mobile-panel.collapsed {
+  transform: translateY(100%);
+}
+
+/* 移动端浮动按钮 */
+.mobile-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.toggle-btn {
+  width: 50px;
+  height: 50px;
+  background: rgba(102, 126, 234, 0.8);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: rgba(102, 126, 234, 1);
+  transform: scale(1.1);
+}
+
+/* 空状态提示 */
+.empty-state {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.empty-hint {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* 控制组样式 */
 .control-group {
   display: flex;
   flex-direction: column;
@@ -358,100 +510,16 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.canvas-container {
-  flex: 1;
-  width: 100%;
-  min-height: 300px;
-  height: calc(100vh - 140px);
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 隐藏移动端元素（桌面端） */
+@media (min-width: 1025px) {
+  .mobile-panel,
+  .mobile-controls {
+    display: none;
+  }
 }
 
-.empty-state {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.empty-hint {
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-/* 移动端切换按钮 */
-.mobile-controls {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-}
-
-.toggle-btn {
-  width: 50px;
-  height: 50px;
-  padding: 0;
-  background: rgba(102, 126, 234, 0.8);
-  border: none;
-  border-radius: 50%;
-  color: white;
-  cursor: pointer;
-  font-size: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.toggle-btn:hover {
-  background: rgba(102, 126, 234, 1);
-  transform: scale(1.1);
-}
-
-/* 响应式断点 */
+/* 移动端调整 */
 @media (max-width: 768px) {
-  .audio-view {
-    padding-top: 50px;
-  }
-
-  .audio-container {
-    padding: 10px;
-    gap: 16px;
-  }
-
-  .header h2 {
-    font-size: 24px;
-  }
-
-  .header p {
-    font-size: 14px;
-  }
-
-  .control-panel {
-    max-height: 500px;
-  }
-
-  .canvas-container {
-    height: calc(100vh - 100px);
-  }
-
   .mobile-controls {
     bottom: 15px;
     right: 15px;
@@ -464,13 +532,8 @@ button:disabled {
   }
 }
 
+/* 平板端调整 */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .canvas-container {
-    height: calc(100vh - 160px);
-  }
-}
-
-@media (min-width: 1025px) {
   .mobile-controls {
     display: none;
   }

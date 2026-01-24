@@ -13,6 +13,9 @@ interface ResponsiveState {
   isDesktop: boolean;
   controlsVisible: boolean;
   keyboardVisible: boolean;
+  sidebarVisible: boolean;
+  sidebarPosition: 'right' | 'bottom';
+  isSidebarCollapsed: boolean;
 }
 
 export function useResponsive() {
@@ -24,6 +27,9 @@ export function useResponsive() {
     isDesktop: false,
     controlsVisible: true,
     keyboardVisible: false,
+    sidebarVisible: true,
+    sidebarPosition: 'right',
+    isSidebarCollapsed: false,
   });
 
   // 防抖函数
@@ -52,6 +58,9 @@ export function useResponsive() {
     state.value.isMobile = width < 768;
     state.value.isTablet = width >= 768 && width <= 1024;
     state.value.isDesktop = width > 1024;
+
+    // 侧边栏位置
+    state.value.sidebarPosition = state.value.isMobile ? 'bottom' : 'right';
   };
 
   // 处理窗口大小变化
@@ -89,6 +98,41 @@ export function useResponsive() {
   const hideKeyboard = () => {
     state.value.keyboardVisible = false;
   };
+
+  // 切换侧边栏可见性
+  const toggleSidebar = () => {
+    state.value.isSidebarCollapsed = !state.value.isSidebarCollapsed;
+  };
+
+  // 显示侧边栏
+  const showSidebar = () => {
+    state.value.isSidebarCollapsed = false;
+    state.value.sidebarVisible = true;
+  };
+
+  // 隐藏侧边栏
+  const hideSidebar = () => {
+    state.value.isSidebarCollapsed = true;
+  };
+
+  // 计算 Canvas 宽度
+  const getCanvasWidth = computed(() => {
+    if (state.value.isMobile) {
+      return '100vw';
+    }
+    if (state.value.isSidebarCollapsed) {
+      return '100vw';
+    }
+    if (state.value.isTablet) {
+      return 'calc(100vw - 250px)';
+    }
+    return 'calc(100vw - 300px)';
+  });
+
+  // 计算 Canvas 高度
+  const getCanvasHeight = computed(() => {
+    return '100vh';
+  });
 
   // 计算可视化区域高度（基于可见的控制面板）
   const visualizationHeight = computed(() => {
@@ -132,6 +176,11 @@ export function useResponsive() {
     hideControls,
     showKeyboard,
     hideKeyboard,
+    toggleSidebar,
+    showSidebar,
+    hideSidebar,
+    getCanvasWidth,
+    getCanvasHeight,
     visualizationHeight,
     canvasContainerHeight,
   };
